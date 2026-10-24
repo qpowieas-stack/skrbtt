@@ -1,13 +1,13 @@
--- Roblox Delta Script: Steal The Egg (Server Bypass & TP Farm)
+-- Roblox Delta Script: Steal The Egg (Custom Speed & Anti-Kick Update)
 -- Executor: Delta Executor
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
-local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
--- 1. إنشاء واجهة المستخدم (UI)
+-- 1. واجهة المستخدم الكلاسيكية (UI)
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local Title = Instance.new("TextLabel")
@@ -23,29 +23,29 @@ else
     ScreenGui.Parent = game:GetService("CoreGui")
 end
 
-ScreenGui.Name = "StealEggBypassUI"
+ScreenGui.Name = "StealEggCustomSpeedUI"
 
 -- القائمة الرئيسية
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-MainFrame.BorderColor3 = Color3.fromRGB(200, 200, 200)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BorderColor3 = Color3.fromRGB(255, 215, 0)
 MainFrame.BorderSizePixel = 2
-MainFrame.Position = UDim2.new(0.35, 0, 0.2, 0)
-MainFrame.Size = UDim2.new(0, 240, 0, 290)
+MainFrame.Position = UDim2.new(0.35, 0, 0.08, 0)
+MainFrame.Size = UDim2.new(0, 260, 0, 480)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
 -- العنوان
 Title.Name = "Title"
 Title.Parent = MainFrame
-Title.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Title.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 Title.BorderSizePixel = 0
-Title.Size = UDim2.new(1, 0, 0, 35)
+Title.Size = UDim2.new(1, 0, 0, 38)
 Title.Font = Enum.Font.SourceSansBold
-Title.Text = "🥚 Steal The Egg (Classic)"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 17
+Title.Text = "🥚 Steal The Egg (Classic Pro)"
+Title.TextColor3 = Color3.fromRGB(255, 215, 0)
+Title.TextSize = 18
 
 -- زر الإخفاء (-) في الزاوية
 ToggleBtn.Name = "ToggleBtn"
@@ -71,48 +71,221 @@ ToggleBtn.MouseButton1Click:Connect(function()
     ToggleBtn.BackgroundColor3 = menuVisible and Color3.fromRGB(200, 40, 40) or Color3.fromRGB(40, 200, 40)
 end)
 
--- إنشاء الأزرار
+-- دالة إنشاء الأزرار
 local function createButton(name, text, pos, color)
     local btn = Instance.new("TextButton")
     btn.Name = name
     btn.Parent = MainFrame
     btn.BackgroundColor3 = color
     btn.Position = pos
-    btn.Size = UDim2.new(0.85, 0, 0, 36)
+    btn.Size = UDim2.new(0.88, 0, 0, 30)
     btn.Font = Enum.Font.SourceSansBold
     btn.Text = text
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.TextSize = 14
+    btn.TextSize = 12
     return btn
 end
 
-local StealthBtn = createButton("StealthBtn", "حماية والتخفي: OFF", UDim2.new(0.075, 0, 0.15, 0), Color3.fromRGB(150, 50, 50))
-local SpeedBtn = createButton("SpeedBtn", "سرعة مشي: OFF", UDim2.new(0.075, 0, 0.31, 0), Color3.fromRGB(60, 60, 60))
-local JumpBtn = createButton("JumpBtn", "قفز عالي: OFF", UDim2.new(0.075, 0, 0.47, 0), Color3.fromRGB(60, 60, 60))
-local EspBtn = createButton("EspBtn", "كشف البيض (ESP): OFF", UDim2.new(0.075, 0, 0.63, 0), Color3.fromRGB(60, 60, 60))
-local FarmBtn = createButton("FarmBtn", "سرقة البيضة بسرعة ⚡", UDim2.new(0.075, 0, 0.79, 0), Color3.fromRGB(40, 100, 180))
+-- إعدادات وتحديد السرعة المخصصة
+local SpeedBox = Instance.new("TextBox")
+SpeedBox.Name = "SpeedBox"
+SpeedBox.Parent = MainFrame
+SpeedBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+SpeedBox.BorderColor3 = Color3.fromRGB(255, 215, 0)
+SpeedBox.Position = UDim2.new(0.06, 0, 0.10, 0)
+SpeedBox.Size = UDim2.new(0.88, 0, 0, 30)
+SpeedBox.Font = Enum.Font.SourceSansBold
+SpeedBox.PlaceholderText = "اكتب رقم السرعة هنا (مثال: 50)"
+SpeedBox.Text = ""
+SpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedBox.TextSize = 12
+
+-- الأزرار
+local SetSpeedBtn = createButton("SetSpeedBtn", "تفعيل السرعة المخصصة ⚡: OFF", UDim2.new(0.06, 0, 0.17, 0), Color3.fromRGB(60, 60, 60))
+local AutoFarmBtn = createButton("AutoFarmBtn", "تجميع بيض تلقائي 🔄: OFF", UDim2.new(0.06, 0, 0.24, 0), Color3.fromRGB(60, 60, 60))
+local FarmBtn     = createButton("FarmBtn", "سرقة أقرب بيضة ⚡", UDim2.new(0.06, 0, 0.31, 0), Color3.fromRGB(40, 120, 200))
+local InfJumpBtn  = createButton("InfJumpBtn", "قفز لانهائي في الهواء ☁️: OFF", UDim2.new(0.06, 0, 0.38, 0), Color3.fromRGB(60, 60, 60))
+local FlyBtn      = createButton("FlyBtn", "طيران فوق الخريطة 🚀: OFF", UDim2.new(0.06, 0, 0.45, 0), Color3.fromRGB(60, 60, 60))
+local BrightBtn   = createButton("BrightBtn", "إزالة الضباب وتوضيح الرؤية 💡: OFF", UDim2.new(0.06, 0, 0.52, 0), Color3.fromRGB(60, 60, 60))
+local SpawnTpBtn  = createButton("SpawnTpBtn", "انتقال فوراً للسبون 🏠", UDim2.new(0.06, 0, 0.59, 0), Color3.fromRGB(180, 100, 30))
+local StealthBtn  = createButton("StealthBtn", "وضع التخفي والحماية: OFF", UDim2.new(0.06, 0, 0.66, 0), Color3.fromRGB(60, 60, 60))
+local JumpBtn     = createButton("JumpBtn", "قفز مرتفع: OFF", UDim2.new(0.06, 0, 0.73, 0), Color3.fromRGB(60, 60, 60))
+local EspBtn      = createButton("EspBtn", "كشف البيض والوحوش (ESP): OFF", UDim2.new(0.06, 0, 0.80, 0), Color3.fromRGB(60, 60, 60))
 
 -----------------------------------------------------
--- البرمجة المعدلة لنظام السيرفر
+-- البرمجة والأنظمة التشغيلية
 -----------------------------------------------------
 
-local stealthToggle = false
-local speedToggle = false
+local customSpeed = 16
+local customSpeedToggle = false
+local autoFarm = false
+local flying = false
+local stealth = false
 local jumpToggle = false
 local espToggle = false
+local infJumpToggle = false
+local brightToggle = false
+local bodyVel
 
--- 1. وضع التخفي والحماية من الموت (Godmode/Anti-Kill)
+-- 1. نظام السرعة المخصصة بدون طرد (Custom WalkSpeed + Anti-Kick Bypass)
+SetSpeedBtn.MouseButton1Click:Connect(function()
+    customSpeedToggle = not customSpeedToggle
+    local inputVal = tonumber(SpeedBox.Text)
+    if inputVal then
+        customSpeed = inputVal
+    else
+        customSpeed = 50 -- السرعة الافتراضية إذا لم يتم إدخال رقم
+    end
+
+    SetSpeedBtn.Text = customSpeedToggle and ("تفعيل السرعة المخصصة (" .. tostring(customSpeed) .. ") ⚡: ON") or "تفعيل السرعة المخصصة ⚡: OFF"
+    SetSpeedBtn.BackgroundColor3 = customSpeedToggle and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(60, 60, 60)
+end)
+
+-- حلقة تكرار لمنع حماية اللعبة من تصفير السرعة أو الطرد
+RunService.Stepped:Connect(function()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChildOfClass("Humanoid") then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if customSpeedToggle then
+            hum.WalkSpeed = customSpeed
+        end
+    end
+end)
+
+-- 2. القفز اللانهائي في الهواء (Infinite Jump)
+InfJumpBtn.MouseButton1Click:Connect(function()
+    infJumpToggle = not infJumpToggle
+    InfJumpBtn.Text = infJumpToggle and "قفز لانهائي في الهواء ☁️: ON" or "قفز لانهائي في الهواء ☁️: OFF"
+    InfJumpBtn.BackgroundColor3 = infJumpToggle and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(60, 60, 60)
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if infJumpToggle then
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChildOfClass("Humanoid") then
+            char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+-- 3. إزالة الضباب ووضوح الرؤية (FullBright)
+BrightBtn.MouseButton1Click:Connect(function()
+    brightToggle = not brightToggle
+    BrightBtn.Text = brightToggle and "إزالة الضباب وتوضيح الرؤية 💡: ON" or "إزالة الضباب وتوضيح الرؤية 💡: OFF"
+    BrightBtn.BackgroundColor3 = brightToggle and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(60, 60, 60)
+    
+    local lighting = game:GetService("Lighting")
+    if brightToggle then
+        lighting.GlobalShadows = false
+        lighting.Brightness = 3
+        lighting.FogEnd = 9e9
+    else
+        lighting.GlobalShadows = true
+        lighting.Brightness = 1
+        lighting.FogEnd = 1000
+    end
+end)
+
+-- 4. تجميع البيض التلقائي (Auto Farm Loop)
+AutoFarmBtn.MouseButton1Click:Connect(function()
+    autoFarm = not autoFarm
+    AutoFarmBtn.Text = autoFarm and "تجميع بيض تلقائي 🔄: ON" or "تجميع بيض تلقائي 🔄: OFF"
+    AutoFarmBtn.BackgroundColor3 = autoFarm and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(60, 60, 60)
+end)
+
+task.spawn(function()
+    while task.wait(1.5) do
+        if autoFarm then
+            local char = LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local savedPos = hrp.CFrame
+                for _, v in pairs(Workspace:GetDescendants()) do
+                    if v:IsA("Model") or v:IsA("BasePart") then
+                        local name = string.lower(v.Name)
+                        if string.find(name, "egg") then
+                            local target = v:IsA("Model") and (v.PrimaryPart or v:FindFirstChildWhichIsA("BasePart")) or v
+                            if target then
+                                hrp.CFrame = target.CFrame * CFrame.new(0, 3, 0)
+                                task.wait(0.3)
+                                hrp.CFrame = savedPos
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- 5. سرقة أقرب بيضة مرة واحدة
+FarmBtn.MouseButton1Click:Connect(function()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        local savedPos = hrp.CFrame
+        for _, v in pairs(Workspace:GetDescendants()) do
+            if v:IsA("Model") or v:IsA("BasePart") then
+                local name = string.lower(v.Name)
+                if string.find(name, "egg") then
+                    local target = v:IsA("Model") and (v.PrimaryPart or v:FindFirstChildWhichIsA("BasePart")) or v
+                    if target then
+                        hrp.CFrame = target.CFrame * CFrame.new(0, 3, 0)
+                        task.wait(0.25)
+                        hrp.CFrame = savedPos
+                        break
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- 6. الطيران فوق الخريطة
+FlyBtn.MouseButton1Click:Connect(function()
+    flying = not flying
+    FlyBtn.Text = flying and "طيران فوق الخريطة 🚀: ON" or "طيران فوق الخريطة 🚀: OFF"
+    FlyBtn.BackgroundColor3 = flying and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(60, 60, 60)
+    
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if flying and hrp then
+        bodyVel = Instance.new("BodyVelocity")
+        bodyVel.MaxForce = Vector3.new(0, 1e9, 0)
+        bodyVel.Velocity = Vector3.new(0, 0, 0)
+        bodyVel.Parent = hrp
+        hrp.CFrame = hrp.CFrame * CFrame.new(0, 12, 0)
+    else
+        if bodyVel then bodyVel:Destroy() end
+    end
+end)
+
+-- 7. الانتقال للسبون (Spawn)
+SpawnTpBtn.MouseButton1Click:Connect(function()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        local spawnLocation = Workspace:FindFirstChild("SpawnLocation") or Workspace:FindFirstChildWhichIsA("SpawnLocation", true)
+        if spawnLocation then
+            hrp.CFrame = spawnLocation.CFrame * CFrame.new(0, 4, 0)
+        else
+            hrp.CFrame = CFrame.new(0, 50, 0)
+        end
+    end
+end)
+
+-- 8. وضع التخفي والحماية
 StealthBtn.MouseButton1Click:Connect(function()
-    stealthToggle = not stealthToggle
-    StealthBtn.Text = stealthToggle and "حماية والتخفي: ON" or "حماية والتخفي: OFF"
-    StealthBtn.BackgroundColor3 = stealthToggle and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(150, 50, 50)
+    stealth = not stealth
+    StealthBtn.Text = stealth and "وضع التخفي والحماية: ON" or "وضع التخفي والحماية: OFF"
+    StealthBtn.BackgroundColor3 = stealth and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(60, 60, 60)
 end)
 
 RunService.Stepped:Connect(function()
-    if stealthToggle then
+    if stealth then
         local char = LocalPlayer.Character
         if char then
-            -- إلغاء كشف أجزاء الشخصية
             for _, p in pairs(char:GetDescendants()) do
                 if p:IsA("BasePart") then
                     p.CanTouch = false
@@ -122,39 +295,24 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- 2. السرعة والقفز
-local function applyStats()
-    local char = LocalPlayer.Character
-    if char and char:FindFirstChild("Humanoid") then
-        char.Humanoid.WalkSpeed = speedToggle and 50 or 16
-        char.Humanoid.UseJumpPower = true
-        char.Humanoid.JumpPower = jumpToggle and 120 or 50
-    end
-end
-
-SpeedBtn.MouseButton1Click:Connect(function()
-    speedToggle = not speedToggle
-    SpeedBtn.Text = speedToggle and "سرعة مشي: ON" or "سرعة مشي: OFF"
-    SpeedBtn.BackgroundColor3 = speedToggle and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(60, 60, 60)
-    applyStats()
-end)
-
+-- 9. القفز المرتفع
 JumpBtn.MouseButton1Click:Connect(function()
     jumpToggle = not jumpToggle
-    JumpBtn.Text = jumpToggle and "قفز عالي: ON" or "قفز عالي: OFF"
+    JumpBtn.Text = jumpToggle and "قفز مرتفع: ON" or "قفز مرتفع: OFF"
     JumpBtn.BackgroundColor3 = jumpToggle and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(60, 60, 60)
-    applyStats()
+    
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChildOfClass("Humanoid") then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        hum.UseJumpPower = true
+        hum.JumpPower = jumpToggle and 130 or 50
+    end
 end)
 
-LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(1)
-    applyStats()
-end)
-
--- 3. كشف مكان البيض (ESP)
+-- 10. كشف البيض والوحوش (ESP)
 EspBtn.MouseButton1Click:Connect(function()
     espToggle = not espToggle
-    EspBtn.Text = espToggle and "كشف البيض (ESP): ON" or "كشف البيض (ESP): OFF"
+    EspBtn.Text = espToggle and "كشف البيض والوحوش (ESP): ON" or "كشف البيض والوحوش (ESP): OFF"
     EspBtn.BackgroundColor3 = espToggle and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(60, 60, 60)
 end)
 
@@ -164,56 +322,21 @@ task.spawn(function()
             for _, v in pairs(Workspace:GetDescendants()) do
                 if v:IsA("Model") or v:IsA("BasePart") then
                     local name = string.lower(v.Name)
-                    if string.find(name, "egg") or string.find(name, "pet") then
-                        if not v:FindFirstChild("EggHighlight") then
+                    if string.find(name, "egg") or string.find(name, "pet") or string.find(name, "lion") then
+                        if not v:FindFirstChild("ProHighlight") then
                             local hl = Instance.new("Highlight")
-                            hl.Name = "EggHighlight"
+                            hl.Name = "ProHighlight"
                             hl.Parent = v
-                            hl.FillColor = Color3.fromRGB(255, 215, 0)
-                            hl.OutlineColor = Color3.fromRGB(255, 0, 0)
+                            hl.FillColor = string.find(name, "egg") and Color3.fromRGB(255, 215, 0) or Color3.fromRGB(255, 0, 0)
+                            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
                         end
                     end
                 end
             end
         else
             for _, v in pairs(Workspace:GetDescendants()) do
-                if v:FindFirstChild("EggHighlight") then
-                    v.EggHighlight:Destroy()
-                end
-            end
-        end
-    end
-end)
-
--- 4. سرقة البيضة السريعة جداً (الانتقال السريع وأخذ البيضة دون أن يلحق السيرفر بك)
-FarmBtn.MouseButton1Click:Connect(function()
-    local char = LocalPlayer.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    
-    if hrp then
-        local oldCFrame = hrp.CFrame -- حفظ مكانك الآمن الحالي
-        
-        for _, v in pairs(Workspace:GetDescendants()) do
-            if v:IsA("Model") or v:IsA("BasePart") then
-                local name = string.lower(v.Name)
-                if string.find(name, "egg") then
-                    local target = v:IsA("Model") and (v.PrimaryPart or v:FindFirstChildWhichIsA("BasePart")) or v
-                    if target then
-                        -- نقل سريع جداً إلى البيضة وأخذها
-                        hrp.CFrame = target.CFrame * CFrame.new(0, 2, 0)
-                        task.wait(0.2)
-                        
-                        -- محاولة التفاعل أو الضغط
-                        if firetouchinterest and target:IsA("BasePart") then
-                            firetouchinterest(hrp, target, 0)
-                            firetouchinterest(hrp, target, 1)
-                        end
-                        
-                        -- الرجوع فوراً للمكان الآمن قبل أن يستوعب السيرفر
-                        task.wait(0.1)
-                        hrp.CFrame = oldCFrame
-                        break
-                    end
+                if v:FindFirstChild("ProHighlight") then
+                    v.ProHighlight:Destroy()
                 end
             end
         end
