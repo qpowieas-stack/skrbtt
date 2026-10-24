@@ -1,8 +1,9 @@
--- Roblox Delta Script: Steal The Egg (Hitbox & Anti-Chase Master Fix)
+-- Roblox Delta Script: Steal The Egg (Server Bypass & TP Farm)
 -- Executor: Delta Executor
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
@@ -22,7 +23,7 @@ else
     ScreenGui.Parent = game:GetService("CoreGui")
 end
 
-ScreenGui.Name = "StealEggHitboxUI"
+ScreenGui.Name = "StealEggBypassUI"
 
 -- القائمة الرئيسية
 MainFrame.Name = "MainFrame"
@@ -85,74 +86,43 @@ local function createButton(name, text, pos, color)
     return btn
 end
 
-local FreezeBtn = createButton("FreezeBtn", "إلغاء لمس وملاحقة: OFF", UDim2.new(0.075, 0, 0.15, 0), Color3.fromRGB(150, 50, 50))
+local StealthBtn = createButton("StealthBtn", "حماية والتخفي: OFF", UDim2.new(0.075, 0, 0.15, 0), Color3.fromRGB(150, 50, 50))
 local SpeedBtn = createButton("SpeedBtn", "سرعة مشي: OFF", UDim2.new(0.075, 0, 0.31, 0), Color3.fromRGB(60, 60, 60))
 local JumpBtn = createButton("JumpBtn", "قفز عالي: OFF", UDim2.new(0.075, 0, 0.47, 0), Color3.fromRGB(60, 60, 60))
 local EspBtn = createButton("EspBtn", "كشف البيض (ESP): OFF", UDim2.new(0.075, 0, 0.63, 0), Color3.fromRGB(60, 60, 60))
-local TpBtn = createButton("TpBtn", "انتقال لأقرب بيضة 🎯", UDim2.new(0.075, 0, 0.79, 0), Color3.fromRGB(40, 100, 180))
+local FarmBtn = createButton("FarmBtn", "سرقة البيضة بسرعة ⚡", UDim2.new(0.075, 0, 0.79, 0), Color3.fromRGB(40, 100, 180))
 
 -----------------------------------------------------
--- البرمجة الخاصة لمنع الملاحقة واللمس الخفي
+-- البرمجة المعدلة لنظام السيرفر
 -----------------------------------------------------
 
-local freezeToggle = false
+local stealthToggle = false
 local speedToggle = false
 local jumpToggle = false
 local espToggle = false
 
--- زر التجميد وإلغاء الملاحقة الخفية
-FreezeBtn.MouseButton1Click:Connect(function()
-    freezeToggle = not freezeToggle
-    FreezeBtn.Text = freezeToggle and "إلغاء لمس وملاحقة: ON" or "إلغاء لمس وملاحقة: OFF"
-    FreezeBtn.BackgroundColor3 = freezeToggle and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(150, 50, 50)
+-- 1. وضع التخفي والحماية من الموت (Godmode/Anti-Kill)
+StealthBtn.MouseButton1Click:Connect(function()
+    stealthToggle = not stealthToggle
+    StealthBtn.Text = stealthToggle and "حماية والتخفي: ON" or "حماية والتخفي: OFF"
+    StealthBtn.BackgroundColor3 = stealthToggle and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(150, 50, 50)
 end)
 
--- معالجة ومنع الـ Hitbox والملاحقة الخفية للحيوانات
 RunService.Stepped:Connect(function()
-    if freezeToggle then
-        -- 1. تعطيل خاصية اللمس من شخصيتك
+    if stealthToggle then
         local char = LocalPlayer.Character
         if char then
-            for _, part in pairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanTouch = false
-                end
-            end
-        end
-
-        -- 2. تعطيل أجزاء الحيوانات والـ Hitbox المباشر وإبعاده محلياً
-        for _, v in pairs(Workspace:GetDescendants()) do
-            if v:IsA("Humanoid") then
-                local character = v.Parent
-                if character and not Players:GetPlayerFromCharacter(character) then
-                    v.WalkSpeed = 0
-                    v.PlatformStand = true
-
-                    for _, part in pairs(character:GetDescendants()) do
-                        if part:IsA("BasePart") then
-                            part.CanTouch = false
-                            part.CanCollide = false
-                            part.Velocity = Vector3.zero
-                            part.RotVelocity = Vector3.zero
-                        end
-                    end
-                end
-            end
-        end
-    else
-        -- إعادة اللمس للشخصية عند الإيقاف
-        local char = LocalPlayer.Character
-        if char then
-            for _, part in pairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanTouch = true
+            -- إلغاء كشف أجزاء الشخصية
+            for _, p in pairs(char:GetDescendants()) do
+                if p:IsA("BasePart") then
+                    p.CanTouch = false
                 end
             end
         end
     end
 end)
 
--- السرعة والقفز
+-- 2. السرعة والقفز
 local function applyStats()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("Humanoid") then
@@ -181,7 +151,7 @@ LocalPlayer.CharacterAdded:Connect(function()
     applyStats()
 end)
 
--- كشف البيض (ESP)
+-- 3. كشف مكان البيض (ESP)
 EspBtn.MouseButton1Click:Connect(function()
     espToggle = not espToggle
     EspBtn.Text = espToggle and "كشف البيض (ESP): ON" or "كشف البيض (ESP): OFF"
@@ -215,17 +185,33 @@ task.spawn(function()
     end
 end)
 
--- الانتقال التلقائي للبيض
-TpBtn.MouseButton1Click:Connect(function()
+-- 4. سرقة البيضة السريعة جداً (الانتقال السريع وأخذ البيضة دون أن يلحق السيرفر بك)
+FarmBtn.MouseButton1Click:Connect(function()
     local char = LocalPlayer.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    
+    if hrp then
+        local oldCFrame = hrp.CFrame -- حفظ مكانك الآمن الحالي
+        
         for _, v in pairs(Workspace:GetDescendants()) do
             if v:IsA("Model") or v:IsA("BasePart") then
                 local name = string.lower(v.Name)
                 if string.find(name, "egg") then
-                    local targetPos = v:IsA("Model") and (v.PrimaryPart or v:FindFirstChildWhichIsA("BasePart")) or v
-                    if targetPos then
-                        char.HumanoidRootPart.CFrame = targetPos.CFrame * CFrame.new(0, 3, 0)
+                    local target = v:IsA("Model") and (v.PrimaryPart or v:FindFirstChildWhichIsA("BasePart")) or v
+                    if target then
+                        -- نقل سريع جداً إلى البيضة وأخذها
+                        hrp.CFrame = target.CFrame * CFrame.new(0, 2, 0)
+                        task.wait(0.2)
+                        
+                        -- محاولة التفاعل أو الضغط
+                        if firetouchinterest and target:IsA("BasePart") then
+                            firetouchinterest(hrp, target, 0)
+                            firetouchinterest(hrp, target, 1)
+                        end
+                        
+                        -- الرجوع فوراً للمكان الآمن قبل أن يستوعب السيرفر
+                        task.wait(0.1)
+                        hrp.CFrame = oldCFrame
                         break
                     end
                 end
