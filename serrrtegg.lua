@@ -1,4 +1,4 @@
--- Roblox Delta Script: Steal The Egg (Freeze & Teleport System)
+-- Roblox Delta Script: Steal The Egg (Hitbox & Anti-Chase Master Fix)
 -- Executor: Delta Executor
 
 local Players = game:GetService("Players")
@@ -6,7 +6,7 @@ local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- 1. واجهة المستخدم (UI)
+-- 1. إنشاء واجهة المستخدم (UI)
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local Title = Instance.new("TextLabel")
@@ -22,8 +22,9 @@ else
     ScreenGui.Parent = game:GetService("CoreGui")
 end
 
-ScreenGui.Name = "StealEggFreezeUI"
+ScreenGui.Name = "StealEggHitboxUI"
 
+-- القائمة الرئيسية
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
@@ -34,6 +35,7 @@ MainFrame.Size = UDim2.new(0, 240, 0, 290)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
+-- العنوان
 Title.Name = "Title"
 Title.Parent = MainFrame
 Title.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
@@ -44,6 +46,7 @@ Title.Text = "🥚 Steal The Egg (Classic)"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 17
 
+-- زر الإخفاء (-) في الزاوية
 ToggleBtn.Name = "ToggleBtn"
 ToggleBtn.Parent = ScreenGui
 ToggleBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
@@ -67,6 +70,7 @@ ToggleBtn.MouseButton1Click:Connect(function()
     ToggleBtn.BackgroundColor3 = menuVisible and Color3.fromRGB(200, 40, 40) or Color3.fromRGB(40, 200, 40)
 end)
 
+-- إنشاء الأزرار
 local function createButton(name, text, pos, color)
     local btn = Instance.new("TextButton")
     btn.Name = name
@@ -81,14 +85,14 @@ local function createButton(name, text, pos, color)
     return btn
 end
 
-local FreezeBtn = createButton("FreezeBtn", "تجميد الحيوان: OFF", UDim2.new(0.075, 0, 0.15, 0), Color3.fromRGB(150, 50, 50))
+local FreezeBtn = createButton("FreezeBtn", "إلغاء لمس وملاحقة: OFF", UDim2.new(0.075, 0, 0.15, 0), Color3.fromRGB(150, 50, 50))
 local SpeedBtn = createButton("SpeedBtn", "سرعة مشي: OFF", UDim2.new(0.075, 0, 0.31, 0), Color3.fromRGB(60, 60, 60))
 local JumpBtn = createButton("JumpBtn", "قفز عالي: OFF", UDim2.new(0.075, 0, 0.47, 0), Color3.fromRGB(60, 60, 60))
 local EspBtn = createButton("EspBtn", "كشف البيض (ESP): OFF", UDim2.new(0.075, 0, 0.63, 0), Color3.fromRGB(60, 60, 60))
 local TpBtn = createButton("TpBtn", "انتقال لأقرب بيضة 🎯", UDim2.new(0.075, 0, 0.79, 0), Color3.fromRGB(40, 100, 180))
 
 -----------------------------------------------------
--- البرمجة والتحكم
+-- البرمجة الخاصة لمنع الملاحقة واللمس الخفي
 -----------------------------------------------------
 
 local freezeToggle = false
@@ -96,28 +100,52 @@ local speedToggle = false
 local jumpToggle = false
 local espToggle = false
 
--- تجميد الحيوانات وإبطال ملاحقتها محلياً
+-- زر التجميد وإلغاء الملاحقة الخفية
 FreezeBtn.MouseButton1Click:Connect(function()
     freezeToggle = not freezeToggle
-    FreezeBtn.Text = freezeToggle and "تجميد الحيوان: ON" or "تجميد الحيوان: OFF"
+    FreezeBtn.Text = freezeToggle and "إلغاء لمس وملاحقة: ON" or "إلغاء لمس وملاحقة: OFF"
     FreezeBtn.BackgroundColor3 = freezeToggle and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(150, 50, 50)
 end)
 
+-- معالجة ومنع الـ Hitbox والملاحقة الخفية للحيوانات
 RunService.Stepped:Connect(function()
     if freezeToggle then
+        -- 1. تعطيل خاصية اللمس من شخصيتك
+        local char = LocalPlayer.Character
+        if char then
+            for _, part in pairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanTouch = false
+                end
+            end
+        end
+
+        -- 2. تعطيل أجزاء الحيوانات والـ Hitbox المباشر وإبعاده محلياً
         for _, v in pairs(Workspace:GetDescendants()) do
             if v:IsA("Humanoid") then
                 local character = v.Parent
                 if character and not Players:GetPlayerFromCharacter(character) then
                     v.WalkSpeed = 0
                     v.PlatformStand = true
-                    
-                    local root = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso") or character.PrimaryPart
-                    if root then
-                        root.Velocity = Vector3.zero
-                        root.RotVelocity = Vector3.zero
-                        root.Anchored = true
+
+                    for _, part in pairs(character:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanTouch = false
+                            part.CanCollide = false
+                            part.Velocity = Vector3.zero
+                            part.RotVelocity = Vector3.zero
+                        end
                     end
+                end
+            end
+        end
+    else
+        -- إعادة اللمس للشخصية عند الإيقاف
+        local char = LocalPlayer.Character
+        if char then
+            for _, part in pairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanTouch = true
                 end
             end
         end
@@ -148,7 +176,12 @@ JumpBtn.MouseButton1Click:Connect(function()
     applyStats()
 end)
 
--- كشف مكان البيض (ESP)
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(1)
+    applyStats()
+end)
+
+-- كشف البيض (ESP)
 EspBtn.MouseButton1Click:Connect(function()
     espToggle = not espToggle
     EspBtn.Text = espToggle and "كشف البيض (ESP): ON" or "كشف البيض (ESP): OFF"
