@@ -1,18 +1,18 @@
--- Roblox Delta Script: Steal The Egg (Fully Tested & Fixed)
--- Optimized for Mobile & Delta Executor
+-- Roblox Delta Script: Steal The Egg (Freeze & Teleport System)
+-- Executor: Delta Executor
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- 1. إنشاء واجهة المستخدم (GUI)
+-- 1. واجهة المستخدم (UI)
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local Title = Instance.new("TextLabel")
 local ToggleBtn = Instance.new("TextButton")
 local UICorner = Instance.new("UICorner")
 
--- حماية حشو الواجهة في CoreGui للمفسرات
 if gethui then
     ScreenGui.Parent = gethui()
 elseif syn and syn.protect_gui then
@@ -22,9 +22,8 @@ else
     ScreenGui.Parent = game:GetService("CoreGui")
 end
 
-ScreenGui.Name = "StealEggFinalUI"
+ScreenGui.Name = "StealEggFreezeUI"
 
--- القائمة الرئيسية
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
@@ -35,7 +34,6 @@ MainFrame.Size = UDim2.new(0, 240, 0, 290)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
--- العنوان
 Title.Name = "Title"
 Title.Parent = MainFrame
 Title.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
@@ -46,7 +44,6 @@ Title.Text = "🥚 Steal The Egg (Classic)"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 17
 
--- زر الإخفاء (-) في زاوية الشاشة
 ToggleBtn.Name = "ToggleBtn"
 ToggleBtn.Parent = ScreenGui
 ToggleBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
@@ -66,16 +63,10 @@ local menuVisible = true
 ToggleBtn.MouseButton1Click:Connect(function()
     menuVisible = not menuVisible
     MainFrame.Visible = menuVisible
-    if menuVisible then
-        ToggleBtn.Text = "-"
-        ToggleBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-    else
-        ToggleBtn.Text = "+"
-        ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 200, 40)
-    end
+    ToggleBtn.Text = menuVisible and "-" or "+"
+    ToggleBtn.BackgroundColor3 = menuVisible and Color3.fromRGB(200, 40, 40) or Color3.fromRGB(40, 200, 40)
 end)
 
--- دالة تصميم الأزرار
 local function createButton(name, text, pos, color)
     local btn = Instance.new("TextButton")
     btn.Name = name
@@ -90,15 +81,14 @@ local function createButton(name, text, pos, color)
     return btn
 end
 
--- إنشاء الأزرار
-local FreezeBtn = createButton("FreezeBtn", "تجميد الحيوانات: OFF", UDim2.new(0.075, 0, 0.15, 0), Color3.fromRGB(150, 50, 50))
+local FreezeBtn = createButton("FreezeBtn", "تجميد الحيوان: OFF", UDim2.new(0.075, 0, 0.15, 0), Color3.fromRGB(150, 50, 50))
 local SpeedBtn = createButton("SpeedBtn", "سرعة مشي: OFF", UDim2.new(0.075, 0, 0.31, 0), Color3.fromRGB(60, 60, 60))
 local JumpBtn = createButton("JumpBtn", "قفز عالي: OFF", UDim2.new(0.075, 0, 0.47, 0), Color3.fromRGB(60, 60, 60))
 local EspBtn = createButton("EspBtn", "كشف البيض (ESP): OFF", UDim2.new(0.075, 0, 0.63, 0), Color3.fromRGB(60, 60, 60))
 local TpBtn = createButton("TpBtn", "انتقال لأقرب بيضة 🎯", UDim2.new(0.075, 0, 0.79, 0), Color3.fromRGB(40, 100, 180))
 
 -----------------------------------------------------
--- البرمجة والأنظمة التشغيلية
+-- البرمجة والتحكم
 -----------------------------------------------------
 
 local freezeToggle = false
@@ -106,43 +96,27 @@ local speedToggle = false
 local jumpToggle = false
 local espToggle = false
 
--- 1. تجميد الحيوانات/الوحوش ومنع ملاحقتها لك
+-- تجميد الحيوانات وإبطال ملاحقتها محلياً
 FreezeBtn.MouseButton1Click:Connect(function()
     freezeToggle = not freezeToggle
-    if freezeToggle then
-        FreezeBtn.Text = "تجميد الحيوانات: ON"
-        FreezeBtn.BackgroundColor3 = Color3.fromRGB(40, 180, 40)
-    else
-        FreezeBtn.Text = "تجميد الحيوانات: OFF"
-        FreezeBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
-    end
+    FreezeBtn.Text = freezeToggle and "تجميد الحيوان: ON" or "تجميد الحيوان: OFF"
+    FreezeBtn.BackgroundColor3 = freezeToggle and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(150, 50, 50)
 end)
 
-task.spawn(function()
-    while task.wait(0.4) do
-        if freezeToggle then
-            for _, obj in pairs(Workspace:GetDescendants()) do
-                if obj:IsA("Humanoid") then
-                    local model = obj.Parent
-                    if model and not Players:GetPlayerFromCharacter(model) then
-                        local hrp = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("PrimaryPart")
-                        if hrp then
-                            hrp.Anchored = true
-                            obj.WalkSpeed = 0
-                        end
-                    end
-                end
-            end
-        else
-            for _, obj in pairs(Workspace:GetDescendants()) do
-                if obj:IsA("Humanoid") then
-                    local model = obj.Parent
-                    if model and not Players:GetPlayerFromCharacter(model) then
-                        local hrp = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("PrimaryPart")
-                        if hrp and hrp.Anchored then
-                            hrp.Anchored = false
-                            obj.WalkSpeed = 16
-                        end
+RunService.Stepped:Connect(function()
+    if freezeToggle then
+        for _, v in pairs(Workspace:GetDescendants()) do
+            if v:IsA("Humanoid") then
+                local character = v.Parent
+                if character and not Players:GetPlayerFromCharacter(character) then
+                    v.WalkSpeed = 0
+                    v.PlatformStand = true
+                    
+                    local root = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso") or character.PrimaryPart
+                    if root then
+                        root.Velocity = Vector3.zero
+                        root.RotVelocity = Vector3.zero
+                        root.Anchored = true
                     end
                 end
             end
@@ -150,21 +124,13 @@ task.spawn(function()
     end
 end)
 
--- 2. السرعة والقفز
+-- السرعة والقفز
 local function applyStats()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("Humanoid") then
-        if speedToggle then
-            char.Humanoid.WalkSpeed = 50
-        else
-            char.Humanoid.WalkSpeed = 16
-        end
-        if jumpToggle then
-            char.Humanoid.UseJumpPower = true
-            char.Humanoid.JumpPower = 120
-        else
-            char.Humanoid.JumpPower = 50
-        end
+        char.Humanoid.WalkSpeed = speedToggle and 50 or 16
+        char.Humanoid.UseJumpPower = true
+        char.Humanoid.JumpPower = jumpToggle and 120 or 50
     end
 end
 
@@ -182,12 +148,7 @@ JumpBtn.MouseButton1Click:Connect(function()
     applyStats()
 end)
 
-LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(1)
-    applyStats()
-end)
-
--- 3. كشف البيض (ESP)
+-- كشف مكان البيض (ESP)
 EspBtn.MouseButton1Click:Connect(function()
     espToggle = not espToggle
     EspBtn.Text = espToggle and "كشف البيض (ESP): ON" or "كشف البيض (ESP): OFF"
@@ -221,7 +182,7 @@ task.spawn(function()
     end
 end)
 
--- 4. الانتقال التلقائي للبيض (Teleport)
+-- الانتقال التلقائي للبيض
 TpBtn.MouseButton1Click:Connect(function()
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
